@@ -37,9 +37,6 @@ function init(file){
 	var log = grid.get(0,0);
 	var map = grid.get(1,0);
 
-	map.addMarker({"lon" : "37.5000", "lat" : "-79.0000" });
-
-
 	var geostream = new require('./Ip2Geo').Stream();
 
 	geostream.on('data', function(data){
@@ -56,12 +53,20 @@ function init(file){
 		screen.render();
 	});
 
+	var buffer = [];
+
 	tail.on('line', function(line){
+		var ip = line.split(' ')[1];
+		if(buffer.length && buffer[buffer.length-1] == ip)
+			return;
+
+		buffer.push(ip);
+
 		geostream.once('string', function(str){
 			log.log(line.split(' ')[0].split(":")[0] + ' got a visit from ' + str);
 			screen.render();
 		});
-		geostream.write(line.split(' ')[1]);
+		geostream.write(ip);
 	});
 
 	screen.render();
