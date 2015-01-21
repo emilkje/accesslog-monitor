@@ -1,8 +1,9 @@
 var blessed = require('blessed'),
-contrib = require('blessed-contrib'),
-screen  = blessed.screen(),
-fs      = require('fs');
-Tail	= require('always-tail');
+		contrib = require('blessed-contrib'),
+		screen  = blessed.screen(),
+		fs      = require('fs'),
+		Tail	= require('always-tail'),
+		server = require('./server');
 
 module.exports = {
 	createScreen: init
@@ -59,8 +60,18 @@ function init(file, options){
 		log = grid.get(0,1);
 	}
 
-	if(options.log && options.web) {
-		log.log('Webserver running at 127.0.0.1:3000');
+	if(options.web) {
+		server.listen(3000, function(){
+		  console.log('listening on *:3000');
+		});
+
+		server.on('mapserver.connection', function(){
+			log.log('Web server got connection');
+		});
+
+		if(options.log) {
+			log.log('Webserver running at 127.0.0.1:3000');
+		}
 	}
 
 	var geostream = new require('./Ip2Geo').Stream();
@@ -77,6 +88,11 @@ function init(file, options){
 		this.emit('string', str);
 		map.addMarker({"lon": lon, "lat": lat});
 		screen.render();
+
+		if(options.web) {
+			data.msg = str;
+			server.emit('line', data);
+		}
 	});
 
 	var buffer = [];
