@@ -8,7 +8,20 @@ var program = require('commander');
 
 program
   .version('0.0.1')
-  .option('-f, --file [path]', 'File to watch [/var/log/apache2/access.log]', '/var/log/apache2/access.log')
+  .usage('[options] </path/to/apache/access.log ...>')
+  .option('-l, --log', 'Display log [true if no other representation are specified]')
+  .option('-m, --map', 'Display map')
+  .option('-w, --web', 'Start web server')
   .parse(process.argv);
 
-require('../').createScreen(program.file);
+var options = 
+{
+	log: program.map ? (program.log || false) : true,
+	map: program.map || false,
+	web: program.web || false
+};
+
+if(!program.args[0])
+	program.help();
+
+require('../').createScreen(program.args[0], options);

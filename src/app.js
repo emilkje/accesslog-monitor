@@ -8,7 +8,7 @@ module.exports = {
 	createScreen: init
 };
 
-function init(file){
+function init(file, options){
 
 	var logfile = file || process.env['FILE'] || __dirname+"/access.log";
 	if(!fs.existsSync(logfile)) {
@@ -23,19 +23,45 @@ function init(file){
 		return process.exit(0);
 	});
 
-	var grid = new contrib.grid({rows: 2, cols: 1});
+	var logoptions = { fg: "green"
+	, selectedFg: "green"
+	, label: 'Log file: ' + logfile};
 
-	grid.set(0, 0, contrib.log,
-	  { fg: "green"
-	  , selectedFg: "green"
-	  , label: 'Log file: ' + logfile})
+	var mapoptions = {label: "Map"};
+	var weboptions = {label: "Webserver", content: 'Webserver running on 127.0.0.1:3000'};
 
-	grid.set(1,0, contrib.map, {label: "Map"});
+	var cols = 1;
+	if(options.log && options.map)
+		cols++;
+
+	var grid = new contrib.grid({rows: 1, cols: cols});
+
+	if(options.map && options.log) {
+		grid.set(0,0,contrib.map,mapoptions);
+		grid.set(0,1,contrib.log,logoptions);
+	} else {
+		if(options.map){
+			grid.set(0,0,contrib.map,mapoptions);
+		}
+		if(options.log){
+			grid.set(0,0,contrib.log,logoptions);
+		}
+	}
 
 	grid.applyLayout(screen);
 
-	var log = grid.get(0,0);
-	var map = grid.get(1,0);
+	if(options.log && !options.map)
+		var log = grid.get(0,0);
+	if(options.map && !options.log)
+		var map = options.log ? grid.get(1,0) : grid.get(0,0);
+	if(options.map && options.log) {
+		var map = grid.get(0,0),
+		log = grid.get(0,1);
+	}
+
+	if(options.log && options.web) {
+		log.log('Webserver running at 127.0.0.1:3000');
+	}
 
 	var geostream = new require('./Ip2Geo').Stream();
 
