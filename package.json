@@ -1,0 +1,20 @@
+{
+  "name": "accesslog-monitor",
+  "version": "1.0.0",
+  "description": "A command line tool to visualize access to apache web servers access.log",
+  "main": "src/app.js",
+  "bin": "bin/cli",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "node node_modules/geoip-lite/scripts/updatedb.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "always-tail": "^0.1.1",
+    "blessed": "0.0.38",
+    "blessed-contrib": "0.0.4",
+    "commander": "^2.6.0",
+    "geoip-lite": "^1.1.5"
+  }
+}
