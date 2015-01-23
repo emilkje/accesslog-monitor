@@ -1,9 +1,9 @@
 var blessed = require('blessed'),
-		contrib = require('blessed-contrib'),
-		screen  = blessed.screen(),
-		fs      = require('fs'),
-		Tail	= require('always-tail'),
-		server = require('./server');
+contrib = require('blessed-contrib'),
+screen  = blessed.screen(),
+fs      = require('fs'),
+Tail	= require('always-tail'),
+server = require('./server');
 
 module.exports = {
 	createScreen: init
@@ -60,54 +60,80 @@ function init(file, options){
 		log = grid.get(0,1);
 	}
 
+	var EventEmitter = require('events').EventEmitter;
+	var app = new EventEmitter;
+
 	if(options.web) {
 		server.listen(3000, function(){
-		  console.log('listening on *:3000');
+			if(options.log) {
+				log.log('Webserver running at 127.0.0.1:3000');
+			}
 		});
 
-		server.on('mapserver.connection', function(){
-			log.log('Web server got connection');
+		app.on('data', function(data){
+			server.emit('line', data);
 		});
 
 		if(options.log) {
-			log.log('Webserver running at 127.0.0.1:3000');
+			server.on('mapserver.connection', function(){
+				log.log('[web view got connection]');
+			});
 		}
 	}
 
 	var geostream = new require('./Ip2Geo').Stream();
 
-	geostream.on('data', function(data){
-		var country = data.country || 'unknown country';
-		var region = data.region || 'unknown region';
-		var city = data.city || 'unknown city';
-		var metro = data.metro || 'unknown metro';
-		var lon = data.ll[0];
-		var lat = data.ll[1];
+	if(options.log) {
+		app.on('data', function(data){
+			var host = data.host;
+			var country = data.country || 'unknown country';
+			var region = data.region || 'unknown region';
+			var city = data.city || 'unknown city';
+			var metro = data.metro || 'unknown metro';
+			var lon = data.ll[0];
+			var lat = data.ll[1];
 
-		var str = country + ', ' + region + ' - ' + city;
-		this.emit('string', str);
-		map.addMarker({"lon": lon, "lat": lat});
-		screen.render();
+			var geostring = country + ', ' + region + ' - ' + city;
+			log.log(host + ' got a visit from ' + geostring);
+			screen.render();
+		});
+	}
 
-		if(options.web) {
-			data.msg = str;
-			server.emit('line', data);
-		}
-	});
+	if(options.map) {
+		app.on('data', function(data){
+			var lon = data.ll[0];
+			var lat = data.ll[1];
+			map.addMarker({"lon": lon, "lat": lat});
+			screen.render();
+		});
+	}
 
 	var buffer = [];
 
 	tail.on('line', function(line){
 		var ip = line.split(' ')[1];
-		if(buffer.length && buffer[buffer.length-1] == ip)
+		var host = line.split(' ')[0].split(":")[0];
+
+		if(buffer.length && buffer[buffer.length-1].ip == ip) {
 			return;
+		}
 
-		buffer.push(ip);
+		var entry = buffer.filter(function(entry){ return entry.ip === ip})[0];
+		
+		if(entry) {
+			app.emit('data', entry);
+			delete buffer[entry];
+			buffer.push(entry);
+			return;
+		}
 
-		geostream.once('string', function(str){
-			log.log(line.split(' ')[0].split(":")[0] + ' got a visit from ' + str);
-			screen.render();
+		geostream.once('data', function(data){
+			data.host = host;
+			data.ip = ip;
+			buffer.push(data);
+			app.emit('data', data);
 		});
+
 		geostream.write(ip);
 	});
 
