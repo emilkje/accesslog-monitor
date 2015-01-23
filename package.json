@@ -1,6 +1,6 @@
 {
   "name": "accesslog-monitor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A command line tool to visualize access to apache web servers access.log",
   "main": "src/app.js",
   "bin": "bin/cli",
