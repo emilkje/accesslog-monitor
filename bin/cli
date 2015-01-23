@@ -12,13 +12,15 @@ program
   .option('-l, --log', 'Display log [true if no other representation are specified]')
   .option('-m, --map', 'Display map')
   .option('-w, --web', 'Start web server')
+  .option('-d, --debug', 'Debug mode')
   .parse(process.argv);
 
 var options = 
 {
 	log: program.map ? (program.log || false) : true,
 	map: program.map || false,
-	web: program.web || false
+	web: program.web || false,
+	debug: program.debug || false,
 };
 
 if(!program.args[0])

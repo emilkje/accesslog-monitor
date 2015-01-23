@@ -2,6 +2,7 @@ var blessed = require('blessed'),
 contrib = require('blessed-contrib'),
 screen  = blessed.screen(),
 fs      = require('fs'),
+LineByLine = require('line-by-line'),
 Tail	= require('always-tail'),
 server = require('./server');
 
@@ -110,12 +111,47 @@ function init(file, options){
 
 	var buffer = [];
 
-	tail.on('line', function(line){
+	if(options.debug) {
+
+		function debug(){
+			var fileoptions = { encoding: 'utf8', skipEmptyLines: true };
+			var addresses = new LineByLine(__dirname+'/../data/unique.txt', fileoptions);
+
+			addresses.on('line', function(ip){
+				
+				addresses.pause();
+
+				setTimeout(function(){
+
+					onVisit(ip, 'localhost');
+					addresses.resume();
+				}, 200);
+			});
+
+			addresses.on('end', debug);
+
+		}
+
+		debug();
+
+		return;
+	}
+
+	app.parse = function parseApache(line){
 		var ip = line.split(' ')[1];
 		var host = line.split(' ')[0].split(":")[0];
 
+		return {ip: ip, host: host};
+	}
+
+	tail.on('line', function(line){
+		onVisit(app.parse(line));
+	});
+
+	function onVisit(ip, host){
+
 		if(buffer.length && buffer[buffer.length-1].ip == ip) {
-			return;
+			//return;
 		}
 
 		var entry = buffer.filter(function(entry){ return entry.ip === ip})[0];
@@ -128,6 +164,7 @@ function init(file, options){
 		}
 
 		geostream.once('data', function(data){
+			if(!data){ return; }
 			data.host = host;
 			data.ip = ip;
 			buffer.push(data);
@@ -135,7 +172,7 @@ function init(file, options){
 		});
 
 		geostream.write(ip);
-	});
+	}
 
 	screen.render();
 }

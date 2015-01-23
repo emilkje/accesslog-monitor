@@ -1,24 +1,129 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-  <title>Socket.IO chat</title>
+  <meta charset=utf-8 />
+  <title>Takk for besøket</title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.css' rel='stylesheet' />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    #messages { list-style-type: none; margin: 0; padding: 0; }
-    #messages li { padding: 5px 10px; }
-    #messages li:nth-child(odd) { background: #eee; }
+    body { margin:0; padding:0; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
   </style>
-  <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-  <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-  <script>
-    var socket = io();
-    socket.on('line', function(data){
-    console.log(data);
-    $('#messages').append($('<li>').text(data.msg));
-  });
-  </script>
 </head>
 <body>
-  <ul id="messages"></ul>
+
+  <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/arc.js/v0.1.0/arc.js'></script>
+  <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+  <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+  
+  <!-- We use arc.js to make our paths curved. -->
+  <script src='https://api.tiles.mapbox.com/mapbox.js/plugins/arc.js/v0.1.0/arc.js'></script>
+
+ <style>
+/*
+ * The path-start class is added to each line
+ * to manage its animation - this interpolates
+ * between the starting and ending values for the
+ * stroke-dashoffset css property
+ */
+ .path-start {
+  -webkit-transition:stroke-dashoffset .8s ease-in;
+  -moz-transition:stroke-dashoffset .8s ease-in;
+  -o-transition:stroke-dashoffset .8s ease-in;
+  transition:stroke-dashoffset .8s ease-in;
+}
+</style>
+
+<div id='map' class='dark'></div>
+
+<script>
+  var socket = io();
+
+  socket.on('ready', init);
+
+  var map;
+  var innit = {x: 11.0675, y: 60.7944444444};
+
+  function init(key){
+    L.mapbox.accessToken = key;
+    // This is an advanced example that is compatible with
+    // modern browsers and IE9+ - the trick it uses is animation
+    // of SVG properties, which makes it relatively efficient for
+    // the effect produced. That said, the same trick means that the
+    // animation is non-geographical - lines interpolate in the same
+    // amount of time regardless of trip length.
+
+    // Show the whole world in this first view.
+    map = L.mapbox.map('map', 'examples.ra3sdcxr', {
+      attributionControl: false,
+      infoControl: true
+    })
+    .setView([innit.y-7, innit.x-20], 3);
+
+    map.infoControl
+    .addInfo('<a href="http://innit.no">Dette er et sanntidskart over besøkende på våre nettsider.</a>');
+
+    boot();
+  }
+
+
+
+  function boot() {
+  // Disable drag and zoom handlers.
+  // Making this effect work with zooming and panning
+  // would require a different technique with different
+  // tradeoffs.
+    socket.on('line', startMap);
+  }
+
+  var counter = 0;
+  
+
+  function startMap(data){
+
+    // Transform the short [lat,lng] format in our
+    // data into the {x, y} expected by arc.js.
+    function obj(ll) { return { y: ll[0], x: ll[1] }; }
+
+    var customer = obj(data.ll);
+
+    // Transform each pair of coordinates into a pretty
+    // great circle using the Arc.js plugin, as included above.
+    var generator = new arc.GreatCircle(customer, innit);
+
+    var line = generator.Arc(100, { offset: 10 });
+    // Leaflet expects [lat,lng] arrays, but a lot of
+    // software does the opposite, including arc.js, so
+    // we flip here.
+    var newLine = L.polyline(line.geometries[0].coords.map(function(c) {
+      return c.reverse();
+    }), {
+      color: '#469195',
+      weight: 1,
+      opacity: 0.3
+    })
+    .addTo(map);
+    var totalLength = newLine._path.getTotalLength();
+    newLine._path.classList.add('path-start');
+    // This pair of CSS properties hides the line initially
+    // See http://css-tricks.com/svg-line-animation-works/
+    // for details on this trick.
+    newLine._path.style.strokeDashoffset = totalLength;
+    newLine._path.style.strokeDasharray = totalLength;
+    // Offset the timeout here: setTimeout makes a function
+    // run after a certain number of milliseconds - in this
+    // case we want each flight path to be staggered a bit.
+    setTimeout((function(path) {
+      return function() {
+            // setting the strokeDashoffset to 0 triggers
+            // the animation.
+            path.style.strokeDashoffset = 0;
+          };
+    })(newLine._path), 100);
+  }
+
+</script>
+
 </body>
 </html>
