@@ -13,6 +13,7 @@ program
   .option('-m, --map', 'Display map')
   .option('-w, --web', 'Start web server')
   .option('-d, --debug', 'Debug mode')
+  .option('-n, --number', 'Number of visitors to display on map at a time')
   .parse(process.argv);
 
 var options = 
@@ -21,6 +22,7 @@ var options =
 	map: program.map || false,
 	web: program.web || false,
 	debug: program.debug || false,
+	limit: program.number || 200
 };
 
 if(!program.args[0])

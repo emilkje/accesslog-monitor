@@ -9,7 +9,7 @@ app.get('/', function(req, res){
 });
 
 io.on('connection', function(socket){
-  http.emit('mapserver.connection', {});
+  http.emit('mapserver.connection', {socket: socket});
   var TOKEN = process.env['TOKEN'] || require(__dirname+'/../env.json').leaflet_token;
   socket.emit('ready', TOKEN);
 });

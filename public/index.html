@@ -8,7 +8,12 @@
   <link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.5/mapbox.css' rel='stylesheet' />
   <style>
     body { margin:0; padding:0; }
-    #map { position:absolute; top:0; bottom:0; width:100%; }
+    #map { position:absolute; top:0; bottom:0; width:100%; z-index: -1; }
+    .counter = {
+      z-index: 9999;
+      font-size: 20px;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -33,8 +38,10 @@
   -o-transition:stroke-dashoffset .8s ease-in;
   transition:stroke-dashoffset .8s ease-in;
 }
+
 </style>
 
+<div class="counter" id="counter"></div>
 <div id='map' class='dark'></div>
 
 <script>
@@ -45,7 +52,16 @@
   var map;
   var innit = {x: 11.0675, y: 60.7944444444};
 
+  var paths = [];
+
+  var config = {limit: 200};
+
   function init(key){
+
+    if(typeof map !== "undefined") {
+      return;
+    }
+
     L.mapbox.accessToken = key;
     // This is an advanced example that is compatible with
     // modern browsers and IE9+ - the trick it uses is animation
@@ -55,7 +71,7 @@
     // amount of time regardless of trip length.
 
     // Show the whole world in this first view.
-    map = L.mapbox.map('map', 'examples.ra3sdcxr', {
+    map = L.mapbox.map('map', 'emilkje.eb90db5f', {
       attributionControl: false,
       infoControl: true
     })
@@ -63,6 +79,7 @@
 
     map.infoControl
     .addInfo('<a href="http://innit.no">Dette er et sanntidskart over besøkende på våre nettsider.</a>');
+
 
     boot();
   }
@@ -75,9 +92,13 @@
   // would require a different technique with different
   // tradeoffs.
     socket.on('line', startMap);
+    socket.on('config', function(options){
+      config = options;
+    });
   }
 
   var counter = 0;
+  var visits = [];
   
 
   function startMap(data){
@@ -87,6 +108,8 @@
     function obj(ll) { return { y: ll[0], x: ll[1] }; }
 
     var customer = obj(data.ll);
+
+    console.log('got visit', customer);
 
     // Transform each pair of coordinates into a pretty
     // great circle using the Arc.js plugin, as included above.
@@ -100,12 +123,13 @@
       return c.reverse();
     }), {
       color: '#469195',
-      weight: 1,
-      opacity: 0.3
+      weight: .5,
+      opacity: 0.1
     })
     .addTo(map);
     var totalLength = newLine._path.getTotalLength();
     newLine._path.classList.add('path-start');
+    newLine._path.classList.add('path');
     // This pair of CSS properties hides the line initially
     // See http://css-tricks.com/svg-line-animation-works/
     // for details on this trick.
@@ -116,10 +140,16 @@
     // case we want each flight path to be staggered a bit.
     setTimeout((function(path) {
       return function() {
-            // setting the strokeDashoffset to 0 triggers
-            // the animation.
-            path.style.strokeDashoffset = 0;
-          };
+        // setting the strokeDashoffset to 0 triggers
+        // the animation.
+        path.style.strokeDashoffset = 0;
+        var elm = document.getElementById('counter');
+        elm.innerHTML = ++counter;
+        visits.push(newLine);
+        if(visits.length == config.limit){
+          map.removeLayer(visits.shift());
+        }
+      };
     })(newLine._path), 100);
   }
 

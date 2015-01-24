@@ -71,13 +71,17 @@ function init(file, options){
 			}
 		});
 
+		server.emit('config', options);
+
 		app.on('data', function(data){
 			server.emit('line', data);
 		});
 
 		if(options.log) {
-			server.on('mapserver.connection', function(){
+			server.on('mapserver.connection', function(con){
 				log.log('[web view got connection]');
+				con.socket.emit('config', options);
+				server.emit('config', options);
 			});
 		}
 	}
@@ -137,7 +141,7 @@ function init(file, options){
 		return;
 	}
 
-	app.parse = function parseApache(line){
+	function parseApache(line){
 		var ip = line.split(' ')[1];
 		var host = line.split(' ')[0].split(":")[0];
 
@@ -145,7 +149,8 @@ function init(file, options){
 	}
 
 	tail.on('line', function(line){
-		onVisit(app.parse(line));
+		var data = parseApache(line);
+		onVisit(data.ip, data.host);
 	});
 
 	function onVisit(ip, host){
