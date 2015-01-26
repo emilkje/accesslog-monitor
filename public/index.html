@@ -33,10 +33,10 @@
  * stroke-dashoffset css property
  */
  .path-start {
-  -webkit-transition:stroke-dashoffset .8s ease-in;
-  -moz-transition:stroke-dashoffset .8s ease-in;
-  -o-transition:stroke-dashoffset .8s ease-in;
-  transition:stroke-dashoffset .8s ease-in;
+  -webkit-transition:stroke-dashoffset 5s ease-in;
+  -moz-transition:stroke-dashoffset 5s ease-in;
+  -o-transition:stroke-dashoffset 5s ease-in;
+  transition:stroke-dashoffset 5s ease-in;
 }
 
 </style>
@@ -54,7 +54,7 @@
 
   var paths = [];
 
-  var config = {limit: 200};
+  var config = {limit: 300};
 
   function init(key){
 
@@ -123,7 +123,7 @@
       return c.reverse();
     }), {
       color: '#469195',
-      weight: .5,
+      weight: .7,
       opacity: 0.1
     })
     .addTo(map);
@@ -146,9 +146,16 @@
         var elm = document.getElementById('counter');
         elm.innerHTML = ++counter;
         visits.push(newLine);
+
         if(visits.length == config.limit){
           map.removeLayer(visits.shift());
         }
+
+        /*
+        setTimeout(function(){
+          map.removeLayer(newLine);
+        }, 20000);
+        */
       };
     })(newLine._path), 100);
   }
