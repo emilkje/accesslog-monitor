@@ -156,7 +156,7 @@ function init(file, options){
 	function onVisit(ip, host){
 
 		if(buffer.length && buffer[buffer.length-1].ip == ip) {
-			//return;
+			return;
 		}
 
 		var entry = buffer.filter(function(entry){ return entry.ip === ip})[0];
@@ -170,6 +170,7 @@ function init(file, options){
 
 		geostream.once('data', function(data){
 			if(!data){ return; }
+			if(options.debug && buffer.filter(function(e){ return e.city === data.city; }).length > 0){ return; }
 			data.host = host;
 			data.ip = ip;
 			buffer.push(data);
