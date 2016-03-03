@@ -129,7 +129,7 @@ function init(file, options){
 
 					onVisit(ip, 'localhost');
 					addresses.resume();
-				}, 200);
+				}, Math.random()*20);
 			});
 
 			addresses.on('end', debug);

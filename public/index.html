@@ -9,7 +9,7 @@
   <style>
     body { margin:0; padding:0; }
     #map { position:absolute; top:0; bottom:0; width:100%; z-index: -1; }
-    .counter = {
+    .counter {
       z-index: 9999;
       font-size: 20px;
       color: #fff;
@@ -33,10 +33,10 @@
  * stroke-dashoffset css property
  */
  .path-start {
-  -webkit-transition:stroke-dashoffset 5s ease-in;
-  -moz-transition:stroke-dashoffset 5s ease-in;
-  -o-transition:stroke-dashoffset 5s ease-in;
-  transition:stroke-dashoffset 5s ease-in;
+  -webkit-transition:stroke-dashoffset .4s ease-in;
+  -moz-transition:stroke-dashoffset .4s ease-in;
+  -o-transition:stroke-dashoffset .4s ease-in;
+  transition:stroke-dashoffset .4s ease-in;
 }
 
 </style>
@@ -50,7 +50,7 @@
   socket.on('ready', init);
 
   var map;
-  var innit = {x: 11.0675, y: 60.7944444444};
+  var center = {x: 10.7635658, y: 59.9092692};
 
   var paths = [];
 
@@ -75,10 +75,10 @@
       attributionControl: false,
       infoControl: true
     })
-    .setView([innit.y-7, innit.x-20], 3);
+    .setView([center.y-7, center.x-20], 3);
 
     map.infoControl
-    .addInfo('<a href="http://innit.no">Dette er et sanntidskart over besøkende på våre nettsider.</a>');
+    .addInfo('<a href="http://intility.no">Dette er et sanntidskart over besøkende på våre nettsider.</a>');
 
 
     boot();
@@ -113,7 +113,7 @@
 
     // Transform each pair of coordinates into a pretty
     // great circle using the Arc.js plugin, as included above.
-    var generator = new arc.GreatCircle(customer, innit);
+    var generator = new arc.GreatCircle(customer, center);
 
     var line = generator.Arc(100, { offset: 10 });
     // Leaflet expects [lat,lng] arrays, but a lot of
@@ -123,8 +123,8 @@
       return c.reverse();
     }), {
       color: '#469195',
-      weight: .7,
-      opacity: 0.1
+      weight: .9,
+      opacity: 0.3
     })
     .addTo(map);
     var totalLength = newLine._path.getTotalLength();
@@ -151,11 +151,10 @@
           map.removeLayer(visits.shift());
         }
 
-        /*
         setTimeout(function(){
           map.removeLayer(newLine);
-        }, 20000);
-        */
+        }, 5500);
+        
       };
     })(newLine._path), 100);
   }
